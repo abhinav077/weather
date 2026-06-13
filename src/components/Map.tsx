@@ -1,10 +1,22 @@
-import { MapContainer, Marker, TileLayer, useMap } from "react-leaflet"
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import type { Coords } from "../types"
 import { useEffect } from "react"
-import { MaptilerLayer } from "@maptiler/leaflet-maptilersdk"
+import L from "leaflet"
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png"
+import markerIcon from "leaflet/dist/images/marker-icon.png"
+import markerShadow from "leaflet/dist/images/marker-shadow.png"
+import { MapStyle, MaptilerLayer } from "@maptiler/leaflet-maptilersdk"
 
 const API_KEY = import.meta.env.VITE_API_KEY
+const MAPTILER_API_KEY =
+  import.meta.env.VITE_MAPTILER_API_KEY ?? "yGG8RhbWuYh6ICGqw69e"
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+})
 
 type Props = {
   coords: Coords
@@ -39,12 +51,16 @@ function MapClick({
   coords: Coords
 }) {
   const map = useMap()
-  map.panTo([coords.lat, coords.lon])
-
-  map.on("click", (e) => {
-    const { lat, lng } = e.latlng
-    onMapClick(lat, lng)
+  useMapEvents({
+    click: (e) => {
+      const { lat, lng } = e.latlng
+      onMapClick(lat, lng)
+    },
   })
+
+  useEffect(() => {
+    map.panTo([coords.lat, coords.lon])
+  }, [map, coords.lat, coords.lon])
 
   return null
 }
@@ -54,8 +70,8 @@ function MapTileLayer() {
 
   useEffect(() => {
     const tileLayer = new MaptilerLayer({
-      style: "basic-dark",
-      apiKey: "yGG8RhbWuYh6ICGqw69e",
+      style: MapStyle.BASIC.DARK,
+      apiKey: MAPTILER_API_KEY,
     })
     tileLayer.addTo(map)
 

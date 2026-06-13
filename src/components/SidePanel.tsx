@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import Information from "/src/assets/information.svg?react"
 import Chevron from "/src/assets/ChevronLeft.svg?react"
 import SidePanelSkeleton from "./skeletons/SidePanelSkeleton"
+import QueryErrorBoundary from "./QueryErrorBoundary"
 
 type Props = {
   coords: Coords
@@ -28,9 +29,14 @@ export default function SidePanel(props: Props) {
       <button onClick={() => setIsSidePanelOpen(false)}>
         <Chevron className="size-8 -ml-2 lg:hidden" />
       </button>
-      <Suspense fallback={<SidePanelSkeleton />}>
-        <AirPollution {...props} />
-      </Suspense>
+      <QueryErrorBoundary
+        key={`pollution-${props.coords.lat}-${props.coords.lon}`}
+        title="Air Pollution"
+      >
+        <Suspense fallback={<SidePanelSkeleton />}>
+          <AirPollution {...props} />
+        </Suspense>
+      </QueryErrorBoundary>
     </div>
   )
 }
@@ -125,6 +131,7 @@ function AirPollution({ coords }: Props) {
             <div className="flex justify-between">
               {Object.keys(pollutant).map((quality) => (
                 <span
+                  key={quality}
                   className={clsx(
                     "px-2 py-1 rounded-md text-xs font-medium",
                     quality === currentLevel

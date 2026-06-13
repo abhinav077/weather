@@ -18,9 +18,13 @@ import SidePanel from "./components/SidePanel"
 import Hamburger from "/src/assets/hamburger.svg?react"
 import MobileHeader from "./components/MobileHeader"
 import LightDarkToggle from "./components/LightDarkToggle"
+import QueryErrorBoundary from "./components/QueryErrorBoundary"
 
 function App() {
-  const [coordinates, setCoords] = useState<Coords>({ lat: 50, lon: 45 })
+  const [coordinates, setCoords] = useState<Coords>({
+    lat: 35.6768601,
+    lon: 139.7638947,
+  })
   const [location, setLocation] = useState("Tokyo")
   const [mapType, setMapType] = useState("clouds_new")
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false)
@@ -28,6 +32,7 @@ function App() {
   const { data: geocodeData } = useQuery({
     queryKey: ["geocode", location],
     queryFn: () => getGeocode(location),
+    enabled: location !== "custom",
   })
 
   const onMapClick = (lat: number, lon: number) => {
@@ -38,7 +43,10 @@ function App() {
   const coords =
     location === "custom"
       ? coordinates
-      : { lat: geocodeData?.[0].lat ?? 0, lon: geocodeData?.[0].lon ?? 0 }
+      : {
+          lat: geocodeData?.[0].lat ?? coordinates.lat,
+          lon: geocodeData?.[0].lon ?? coordinates.lon,
+        }
 
   return (
     <>
@@ -73,24 +81,44 @@ function App() {
             <MapLegend mapType={mapType} />
           </div>
           <div className="col-span-1 2xl:row-span-2 order-2">
-            <Suspense fallback={<CurrentSkeleton />}>
-              <CurrentWeather coords={coords} />
-            </Suspense>
+            <QueryErrorBoundary
+              key={`current-${coords.lat}-${coords.lon}`}
+              title="Current Weather"
+            >
+              <Suspense fallback={<CurrentSkeleton />}>
+                <CurrentWeather coords={coords} />
+              </Suspense>
+            </QueryErrorBoundary>
           </div>
           <div className="col-span-1 order-3 2xl:order-4 2xl:row-span-2">
-            <Suspense fallback={<DailySkeleton />}>
-              <DailyForecast coords={coords} />
-            </Suspense>
+            <QueryErrorBoundary
+              key={`daily-${coords.lat}-${coords.lon}`}
+              title="Daily Forecast"
+            >
+              <Suspense fallback={<DailySkeleton />}>
+                <DailyForecast coords={coords} />
+              </Suspense>
+            </QueryErrorBoundary>
           </div>
           <div className="col-span-1 md:col-span-2 2xl:row-span-1 order-4 2xl:order-3">
-            <Suspense fallback={<HourlySkeleton />}>
-              <HourlyForecast coords={coords} />
-            </Suspense>
+            <QueryErrorBoundary
+              key={`hourly-${coords.lat}-${coords.lon}`}
+              title="Hourly Forecast (48 Hours)"
+            >
+              <Suspense fallback={<HourlySkeleton />}>
+                <HourlyForecast coords={coords} />
+              </Suspense>
+            </QueryErrorBoundary>
           </div>
           <div className="col-span-1 md:col-span-2 2xl:row-span-1 order-5">
-            <Suspense fallback={<AdditionalInfoSkeleton />}>
-              <AdditionalInfo coords={coords} />
-            </Suspense>
+            <QueryErrorBoundary
+              key={`additional-${coords.lat}-${coords.lon}`}
+              title="Additional Weather Info"
+            >
+              <Suspense fallback={<AdditionalInfoSkeleton />}>
+                <AdditionalInfo coords={coords} />
+              </Suspense>
+            </QueryErrorBoundary>
           </div>
         </div>
       </div>
